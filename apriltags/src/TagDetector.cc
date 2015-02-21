@@ -48,7 +48,7 @@ namespace AprilTags {
         i++;
       }
     }
-    std::pair<int,int> opticalCenter(width/2, height/2);
+    std::pair<float,float> opticalCenter(width/2.0, height/2.0);
 
 #ifdef DEBUG_APRIL
 #if 0
