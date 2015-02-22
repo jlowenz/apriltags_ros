@@ -35,7 +35,8 @@ using namespace std;
 
 namespace AprilTags {
 
-  std::vector<TagDetection> TagDetector::extractTags(const cv::Mat& image) {
+  std::vector<TagDetection> TagDetector::extractTags(const cv::Mat& image, 
+						     bool use_subpixel_accuracy) {
 
     // convert to internal AprilTags image (todo: slow, change internally to OpenCV)
     int width = image.cols;
@@ -487,10 +488,6 @@ namespace AprilTags {
       TagDetection thisTagDetection;
       thisTagFamily.decode(thisTagDetection, tagCode);
 
-      // compute the homography (and rotate it appropriately)
-      thisTagDetection.homography = quad.homography.getH();
-      thisTagDetection.hxy = quad.homography.getCXY();
-
       float c = std::cos(thisTagDetection.rotation*(float)M_PI/2);
       float s = std::sin(thisTagDetection.rotation*(float)M_PI/2);
       Eigen::Matrix3d R;
@@ -499,9 +496,6 @@ namespace AprilTags {
       R(0,1) = -s;
       R(1,0) = s;
       R(2,2) = 1;
-      Eigen::Matrix3d tmp;
-      tmp = thisTagDetection.homography * R;
-      thisTagDetection.homography = tmp;
 
       // Rotate points in detection according to decoded
       // orientation.  Thus the order of the points in the
@@ -518,8 +512,44 @@ namespace AprilTags {
 	}
       }
 
-      for (int i=0; i< 4; i++)
-	thisTagDetection.p[i] = quad.quadPoints[(i+bestRot) % 4];
+      if (use_subpixel_accuracy) {
+	// use subpixel corner refinement
+	cv::Mat corners(4,2,CV_32F);
+	for (int i=0; i< 4; i++) {
+	  std::pair<float,float> pt = quad.quadPoints[(i+bestRot) % 4];
+	  corners.at<float>(i,0) = pt.first;
+	  corners.at<float>(i,1) = pt.second;	
+	  //thisTagDetection.p[i] = quad.quadPoints[(i+bestRot) % 4];
+	}
+	cv::TermCriteria tc(cv::TermCriteria::MAX_ITER | cv::TermCriteria::EPS, 100, 0.001);
+	cv::cornerSubPix(image, corners, cv::Size(5,5), cv::Size(-1,-1), tc);
+	std::vector<std::pair<float,float> > pts(4);
+	for (int i=0; i<4; ++i) {
+	  std::pair<float,float> pt = quad.quadPoints[(i+bestRot) % 4];
+	  // printf("subpix delta: %f %f\n", 
+	  // 	 pt.first - corners.at<float>(i,0),
+	  // 	 pt.second - corners.at<float>(i,1));
+	  std::pair<float,float> newpt = std::make_pair(corners.at<float>(i,0),
+							corners.at<float>(i,1));
+	  thisTagDetection.p[i] = newpt;
+	  pts[i] = newpt;
+	}
+	quad = Quad(pts, opticalCenter);
+
+      } else {
+	for (int i=0; i< 4; i++) {
+	  thisTagDetection.p[i] = quad.quadPoints[(i+bestRot) % 4];
+	}
+      }
+
+      // compute the homography (and rotate it appropriately)
+      thisTagDetection.homography = quad.homography.getH();
+      thisTagDetection.hxy = quad.homography.getCXY();
+
+      // rotate the homography
+      Eigen::Matrix3d tmp;
+      tmp = thisTagDetection.homography * R;
+      thisTagDetection.homography = tmp;
 
       if (thisTagDetection.good) {
 	thisTagDetection.cxy = quad.interpolate01(0.5f, 0.5f);
