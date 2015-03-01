@@ -153,10 +153,28 @@ namespace AprilTags {
   #pragma omp parallel for
   for (int y = 1; y < fimSeg.getHeight()-1; y++) {
     for (int x = 1; x < fimSeg.getWidth()-1; x++) {
-      float Ix = fimSeg.get(x+1, y) - fimSeg.get(x-1, y);
-      float Iy = fimSeg.get(x, y+1) - fimSeg.get(x, y-1);
+      // float Ix = fimSeg.get(x+1, y) + fimSeg.get(x-1, y);
+      // float Ix = 3*fimSeg.get(x+1, y-1) - 3*fimSeg.get(x-1, y-1);
+      // Ix +=      10*fimSeg.get(x+1, y) - 10*fimSeg.get(x-1, y);
+      // Ix +=      3*fimSeg.get(x+1, y+1) - 3*fimSeg.get(x-1, y+1);
+      float Ix = fimSeg.get(x+1, y-1) - fimSeg.get(x-1, y-1);
+      Ix +=      2*fimSeg.get(x+1, y) - 2*fimSeg.get(x-1, y);
+      Ix +=      fimSeg.get(x+1, y+1) - fimSeg.get(x-1, y+1);
+      Ix /= 3.0;
 
+      // float Iy = fimSeg.get(x, y+1) - fimSeg.get(x, y-1);
+      // float Iy =  3*fimSeg.get(x-1, y+1) - 3*fimSeg.get(x-1, y-1);
+      // Iy +=      10*fimSeg.get(x,   y+1) - 10*fimSeg.get(x, y-1);
+      // Iy +=       3*fimSeg.get(x+1, y+1) - 3*fimSeg.get(x+1, y-1);
+      float Iy =  fimSeg.get(x-1, y+1) - fimSeg.get(x-1, y-1);
+      Iy +=     2*fimSeg.get(x,   y+1) - 2*fimSeg.get(x, y-1);
+      Iy +=       fimSeg.get(x+1, y+1) - fimSeg.get(x+1, y-1);
+      Iy /= 3.0;
+      
       float mag = Ix*Ix + Iy*Iy;
+      //float mag = sqrt(Ix*Ix + Iy*Iy);
+      //float mag = fabs(Ix) + fabs(Iy);
+      //float mag = fabs(Ix*Ix*Ix) + fabs(Iy*Iy*Iy);
 #if 0 // kaess: fast version, but maybe less accurate?
       float theta = MathUtil::fast_atan2(Iy, Ix);
 #else
@@ -521,7 +539,7 @@ namespace AprilTags {
 	  corners.at<float>(i,1) = pt.second;	
 	  //thisTagDetection.p[i] = quad.quadPoints[(i+bestRot) % 4];
 	}
-	cv::TermCriteria tc(cv::TermCriteria::MAX_ITER | cv::TermCriteria::EPS, 100, 0.001);
+	cv::TermCriteria tc(cv::TermCriteria::MAX_ITER | cv::TermCriteria::EPS, 50, 0.001);
 	cv::cornerSubPix(image, corners, cv::Size(5,5), cv::Size(-1,-1), tc);
 	std::vector<std::pair<float,float> > pts(4);
 	for (int i=0; i<4; ++i) {
