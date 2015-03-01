@@ -19,7 +19,7 @@ catkin_package(
 
 include_directories(include include/AprilTags)
 include_directories(
-  ${Eigen_INCLUDE_DIRS}
+  ${EIGEN_INCLUDE_DIR}
   ${OpenCV_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
@@ -28,7 +28,7 @@ add_library(apriltags
   src/Edge.cc src/FloatImage.cc src/GLine2D.cc src/GLineSegment2D.cc src/Gaussian.cc src/GrayModel.cc src/Homography33.cc src/MathUtil.cc src/Quad.cc src/Segment.cc src/TagDetection.cc src/TagDetector.cc src/TagFamily.cc src/UnionFindSimple.cc
 )
 target_link_libraries(apriltags
-  ${Eigen_LIBRARIES}
+  ${EIGEN_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}
 )
