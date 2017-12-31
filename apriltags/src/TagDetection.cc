@@ -76,7 +76,7 @@ bool TagDetection::overlapsTooMuch(const TagDetection &other) const {
 Eigen::Matrix4d TagDetection::getRelativeTransform(double tag_size, double fx, double fy, double px, double py) const {
   std::vector<cv::Point3f> objPts;
   std::vector<cv::Point2f> imgPts;
-  double s = tag_size/2.;
+  double s = tag_size/2.;  
   objPts.push_back(cv::Point3f(-s,-s, 0));
   objPts.push_back(cv::Point3f( s,-s, 0));
   objPts.push_back(cv::Point3f( s, s, 0));
@@ -91,15 +91,23 @@ Eigen::Matrix4d TagDetection::getRelativeTransform(double tag_size, double fx, d
   imgPts.push_back(cv::Point2f(p3.first, p3.second));
   imgPts.push_back(cv::Point2f(p4.first, p4.second));
 
-  cv::Mat rvec, tvec;
-  cv::Matx33f cameraMatrix(
-                           fx, 0, px,
+  cv::Mat rvec = cv::Mat::zeros(3,1,CV_32F);
+  cv::Mat tvec = cv::Mat::zeros(3,1,CV_32F);
+  //tvec.at<float>(2,0) = 0.5;
+  cv::Matx33f cameraMatrix(fx, 0, px,
                            0, fy, py,
                            0,  0,  1);
   cv::Vec4f distParam(0,0,0,0); // all 0?
-  cv::solvePnP(objPts, imgPts, cameraMatrix, distParam, rvec, tvec);
+  if (!cv::solvePnP(objPts, imgPts, cameraMatrix, distParam, rvec, tvec, false, cv::SOLVEPNP_ITERATIVE)) {
+    return Eigen::Matrix4d::Identity();
+  }
+  std::cout << "AprilTag relative transform: s " << s << " t " << tvec << " r " << rvec << std::endl;
   cv::Matx33d r;
-  cv::Rodrigues(rvec, r);
+  try {
+    cv::Rodrigues(rvec, r);
+  } catch (cv::Exception& e) {
+    std::cerr << "Error performing Rodrigues: rvec = " << rvec << ", tvec = " << tvec << std::endl;
+  }
   Eigen::Matrix3d wRo;
   wRo << r(0,0), r(0,1), r(0,2), r(1,0), r(1,1), r(1,2), r(2,0), r(2,1), r(2,2);
 

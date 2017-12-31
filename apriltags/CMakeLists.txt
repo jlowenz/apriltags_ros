@@ -29,7 +29,7 @@ add_library(apriltags
 )
 target_link_libraries(apriltags
   ${Eigen_LIBRARIES}
-  ${OpenCV_LIBRARIES}
+  #${OpenCV_LIBRARIES}
   ${catkin_LIBRARIES}
 )
 
