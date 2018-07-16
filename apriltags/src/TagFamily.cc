@@ -35,6 +35,11 @@ TagFamily::TagFamily(const TagCodes& tagCodes)
   codes = tagCodes.codes;
 }
 
+TagFamily::TagFamily(const TagFamily& tagFamily)
+  : blackBorder(tagFamily.blackBorder), bits(tagFamily.bits), dimension(tagFamily.dimension),
+    minimumHammingDistance(tagFamily.minimumHammingDistance),
+    errorRecoveryBits(tagFamily.errorRecoveryBits), codes(tagFamily.codes) {}
+
 void TagFamily::setErrorRecoveryBits(int b) {
   errorRecoveryBits = b;
 }
