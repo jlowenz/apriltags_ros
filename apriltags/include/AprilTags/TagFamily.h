@@ -30,6 +30,8 @@ public:
   //! The codes array is not copied internally and so must not be modified externally.
   TagFamily(const TagCodes& tagCodes);
 
+  TagFamily(const TagFamily& tagFamily);
+
   void setErrorRecoveryBits(int b);
 
   void setErrorRecoveryFraction(float v);
